@@ -1,6 +1,6 @@
 # calls_logs_manager
 
-A new Flutter plugin project.
+A new Flutter plugin to get call logs with content provider.
 
 ## Getting Started
 
