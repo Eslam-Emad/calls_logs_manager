@@ -3,6 +3,7 @@ package com.example.calls_logs_manager
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.provider.CallLog
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
@@ -14,6 +15,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.util.*
 
 
 class CallsLogsManagerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -44,8 +46,8 @@ class CallsLogsManagerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
             Log.d("channel", "getLogs")
-//            val logs = readCallLog()
-//            result.success(logs)
+            val logs = readCallLog()
+            result.success(logs)
 
         } else {
             result.notImplemented()
@@ -68,6 +70,56 @@ class CallsLogsManagerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onDetachedFromActivity() {
         activityPluginBinding = null
         activity = null
+    }
+    private fun readCallLog(): ArrayList<HashMap<String, String>> {
+        val numberCol = CallLog.Calls.NUMBER
+        val durationCol = CallLog.Calls.DURATION
+        val typeCol = CallLog.Calls.TYPE // 1 - Incoming, 2 - Outgoing, 3 - Missed
+        val dateCol = CallLog.Calls.DATE
+        Log.d("inReadCallLog", "start getting logs")
+        val projection = arrayOf(numberCol, durationCol, typeCol, dateCol)
+//        val querySelection = " ?> '1656876596646'"
+//        val selectionArgs = arrayOf(dateCol)
+
+
+        val cal: Calendar = Calendar.getInstance()
+        cal.set(2022, Calendar.JULY, 4, 12, 0, 0)
+        val date: Date = cal.time
+
+        val querySelection = CallLog.Calls.DATE + ">?"
+        val selectionArgs = arrayOf(date.time.toString())
+
+        Log.d("lower than O", "lower than O")
+
+        val cursor = activity?.contentResolver?.query(
+            CallLog.Calls.CONTENT_URI,
+            projection, querySelection, selectionArgs, CallLog.Calls.DATE + " desc"
+        )
+        val numberColIdx = cursor!!.getColumnIndex(numberCol)
+        val durationColIdx = cursor.getColumnIndex(durationCol)
+        val typeColIdx = cursor.getColumnIndex(typeCol)
+        val dateColIdx = cursor.getColumnIndex(dateCol)
+        Log.d("inReadCallLog", "start getting logs")
+
+        val logsList: ArrayList<HashMap<String, String>> = ArrayList()
+
+        while (cursor.moveToNext()) {
+            val number = cursor.getString(numberColIdx)
+            val duration = cursor.getString(durationColIdx)
+            val type = cursor.getString(typeColIdx)
+            val date = cursor.getString(dateColIdx)
+            Log.d("MY_APP", "$number $duration $type date : $date ")
+            val logsMap: HashMap<String, String> = HashMap()
+
+            logsMap[numberCol] = number
+            logsMap[durationCol] = duration
+            logsMap[typeCol] = type
+            logsMap[dateCol] = date.toString()
+            logsList.add(logsMap)
+        }
+
+        cursor.close()
+        return logsList
     }
 
 
